@@ -1,0 +1,6 @@
+time
+struct
+pyserial
+enocean
+lxml
+requests
