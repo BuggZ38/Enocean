@@ -4,16 +4,19 @@ import utils
 from serial import Serial, SerialException
 from enocean.communicators.communicator import Communicator
 
+import requests as rq
+
 from EnOceanFrame import EnOceanFrame
 from ApiSender import ApiSender
 
+from constant import ID_Manager
 
 class EnOceanSerialReader:
 
     def __str__(self):
         return f"EnOceanDevice(port: str='{self.port}', baudrate: int={self.baudrate})"
 
-    def __init__(self, port: str, baudrate: int):
+    def __init__(self, port: str, baudrate: int, ID_mana: ID_Manager, base_url: str):
         self.port = port
         self.baudrate = baudrate
         self.buffer = b""
@@ -21,9 +24,13 @@ class EnOceanSerialReader:
         self.reading = False  # Flag pour contrôler la lecture
         self.thread = None
 
-        self.frame = EnOceanFrame()
+        self.ID_Mana =ID_mana
+        self.frame = EnOceanFrame(self.ID_Mana)
         self.api = ApiSender()
         self.communicator = Communicator()
+
+        self.__base_url = base_url
+
 
     def connect(self):
         """Ouvre le port série et démarre la lecture en arrière-plan."""
@@ -47,7 +54,14 @@ class EnOceanSerialReader:
                     trames, self.buffer = utils.extract_trames(self.buffer)
                     for trame in trames:
                         print("\n", datetime.datetime.now(), end="\t")
-                        print(self.process_frame(trame))
+                        print(utils.to_hex_string(trame))
+
+                        data_utils = self.process_frame(trame)
+                        print(data_utils)
+
+                        if 'info' not in data_utils:
+                            rq.post(f"{self.__base_url}/data", json=data_utils)
+
         except SerialException as e:
             print(f"Erreur de lecture : {e}")
 

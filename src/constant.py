@@ -3,6 +3,9 @@ from __future__ import print_function, unicode_literals, division, absolute_impo
 from enum import IntEnum, Enum
 
 
+import requests as rq
+
+
 # EnOceanSerialProtocol3.pdf / 12
 class PACKET(IntEnum):
     RESERVED = 0x00
@@ -168,9 +171,35 @@ class DB6(object):
 
 class KNOWN_ID(Enum):
     button = "254.254.150.184"
-    light_sensor = "1.164.217.199"
+    light_sensor = "5.164.48.115"
     motion_sensor = "0.133.148.66"
     prise = "5.19.106.62"
+
+
+class ID_Manager:
+
+    def __init__(self, base_url = "http://127.0.0.1:57400/api"):
+        self.__baseURL = base_url
+
+        self.__known_id = self.get_ID()
+
+    def add(self, id_device):
+        if not id_device in self.__known_id:
+            self.__known_id.append(id_device)
+            sensor = {"sensor" : id_device}
+            response = rq.post(f"{self.__baseURL}/sensors", json=sensor)
+            print(response.json())
+
+    def get_ID(self):
+        raw = rq.get(f"{self.__baseURL}/sensors").json()
+        return [sens['sender_ip'] for sens in raw]
+
+    def check_ID(self, id_device):
+        return True if id_device in self.__known_id else False
+
+    def get_ID_by_IP(self, ip):
+        raw = rq.get(f"{self.__baseURL}/sensors").json()
+        return [sens['id'] for sens in raw if sens['sender_ip'] == ip]
 
 
 CRC_TABLE = (

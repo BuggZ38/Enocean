@@ -1,6 +1,11 @@
 import utils
 from constant import PACKET
 from EnOceanDevice import EnOceanDevice
+from src.constant import KNOWN_ID
+from src.constant import ID_Manager
+
+import time
+
 
 class EnOceanFrame:
     raw_data: bytes
@@ -15,8 +20,8 @@ class EnOceanFrame:
 
     idDiscover = []
 
-    def __init__(self):
-        self.device = EnOceanDevice()
+    def __init__(self, id_mana: ID_Manager):
+        self.device = id_mana
 
     def __str__(self):
         return  ""
@@ -49,10 +54,29 @@ class EnOceanFrame:
 
             dataUtils = {}
 
-            self.device.sender_id = self.decoded_data['senderID']
+            sender_id = self.decoded_data['senderID']
 
-            if self.validate_crc() and self.device.check_device():
-                dataUtils = {'senderID': f'{self.decoded_data['senderID']}', 'data': f'{utils.to_hex_string(self.decoded_data['data'])}'}
+            if self.validate_crc() and self.device.check_ID(sender_id):
+                dataUtils = {'sender_id': int(self.device.get_ID_by_IP(sender_id)[0]), 'data': f'{utils.to_hex_string(self.decoded_data['data'])}', 'timestamp': f'{time.time()}'}
+
+            elif self.validate_crc() and not self.device.check_ID(sender_id):
+                data = self.decoded_data['data']
+
+                if utils.to_hex_string(data) == "18:08:0D:80" and self.decoded_data['profile'] == "BS4":
+                    self.device.add(sender_id)
+                    message = "Device Added"
+                else:
+                    message = "Unknow device"
+
+                if self.decoded_data['profile'] in ["BS1", "RPS", "VLD"]:
+                    self.device.add(sender_id)
+                    message = "Device Added"
+
+                dataUtils = {'info': message, 'profile': f"{self.decoded_data['profile']}"}
+            else:
+                dataUtils = {'info': 'Wrong Data'}
+
+
             return dataUtils
 
         except IndexError:

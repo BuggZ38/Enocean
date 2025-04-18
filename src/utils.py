@@ -72,7 +72,6 @@ def dataDecode(data):
         senderID = '.'.join(f"{int(item)}" for item in data[len(data) - 5:len(data) - 1])
         status = data[len(data) - 1]
         data = data[1:len(data) - 5]
-        print({'profile': r_org, 'data': data, 'senderID': senderID, 'status': status})
         return {'profile': r_org, 'data': data, 'senderID': senderID, 'status': status}
 
 
