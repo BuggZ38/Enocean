@@ -6,7 +6,6 @@ Création: bstauss, le 24/01/2025
 
 # Imports
 
-import struct
 import time
 from EnOceanSerialReader import EnOceanSerialReader
 from enocean.protocol.packet import RadioPacket

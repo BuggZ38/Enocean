@@ -4,6 +4,8 @@ import utils
 from serial import Serial, SerialException
 from enocean.communicators.communicator import Communicator
 
+from serial import Serial
+
 import requests as rq
 
 from EnOceanFrame import EnOceanFrame
@@ -24,12 +26,13 @@ class EnOceanSerialReader:
         self.reading = False  # Flag pour contrôler la lecture
         self.thread = None
 
-        self.ID_Mana =ID_mana
+        self.ID_Mana = ID_mana
         self.frame = EnOceanFrame(self.ID_Mana)
-        self.api = ApiSender()
-        self.communicator = Communicator()
+        # self.communicator = Communicator()
+        self.communicator = Serial()
 
         self.__base_url = base_url
+        self.api = ApiSender(self.__base_url)
 
 
     def connect(self):
@@ -60,7 +63,7 @@ class EnOceanSerialReader:
                         print(data_utils)
 
                         if 'info' not in data_utils:
-                            rq.post(f"{self.__base_url}/data", json=data_utils)
+                            self.api.send(data_utils)
 
         except SerialException as e:
             print(f"Erreur de lecture : {e}")
@@ -75,7 +78,8 @@ class EnOceanSerialReader:
                 self.process_frame(trame)
 
     def send_data(self, packet):
-        return self.communicator.send(packet)
+        # return self.communicator.send(packet)
+        return  self.communicator.write(packet)
 
     def process_frame(self, trame: bytes):
         """Traite une trame reçue."""
